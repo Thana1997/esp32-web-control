@@ -29,7 +29,7 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script>
         // เชื่อมต่อ HiveMQ public broker ผ่าน WebSocket
-        const brokerUrl = 'wss://broker.hivemq.com:8000/mqtt';
+        const brokerUrl = 'ws://broker.hivemq.com:8000/mqtt';
         const topic = 'water_tank/level';
 
         const client = mqtt.connect(brokerUrl);
