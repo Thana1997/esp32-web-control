@@ -46,12 +46,12 @@
     <script>
         // เปลี่ยนเป็น Mosquitto WebSocket broker
         const brokerUrl = 'wss://test.mosquitto.org:8080/mqtt';
-        const topicLevel = 'water_tank_1997_bang/water_level';
+        const topicLevel = 'water_tank_1997_bang/level';
         const topicCommands = 'water_tank_1997_bang/commands';
 
         const client = mqtt.connect(brokerUrl);
 
-        const levelEl = document.getElementById('water_level');
+        const levelEl = document.getElementById('level');
         const statusEl = document.getElementById('status');
 
         client.on('connect', () => {
