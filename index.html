@@ -1,55 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>ESP32 Pump Control</title>
-  <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 50px;
-    }
-    button {
-      font-size: 20px;
-      padding: 15px 30px;
-      margin: 10px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-    .on { background-color: #4CAF50; color: white; }
-    .off { background-color: #f44336; color: white; }
-  </style>
+    <meta charset="UTF-8" />
+    <title>Water Tank Level Monitor</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background: #eef6f9;
+        }
+        #level {
+            font-size: 72px;
+            color: #0077cc;
+            margin: 20px 0;
+        }
+        #status {
+            font-size: 18px;
+            color: #555;
+        }
+    </style>
 </head>
 <body>
-  <h1>💧 ESP32 Water Pump Control</h1>
-  <p>Status: <span id="status">Disconnected</span></p>
-  <button class="on" onclick="sendCommand('on')">Turn ON</button>
-  <button class="off" onclick="sendCommand('off')">Turn OFF</button>
+    <h1>Water Tank Level Monitor</h1>
+    <div id="level">-- %</div>
+    <div id="status">Connecting to MQTT...</div>
 
-  <script>
-    const statusText = document.getElementById("status");
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        // เชื่อมต่อ HiveMQ public broker ผ่าน WebSocket
+        const brokerUrl = 'wss://broker.hivemq.com:8000/mqtt';
+        const topic = 'water_tank/level';
 
-    const client = new Paho.MQTT.Client("broker.hivemq.com", 8000, "webClient-" + Math.random());
+        const client = mqtt.connect(brokerUrl);
 
-    client.connect({
-      onSuccess: () => {
-        statusText.textContent = "✅ Connected to MQTT";
-        console.log("Connected to MQTT Broker");
-      },
-      onFailure: () => {
-        statusText.textContent = "❌ Failed to connect";
-        console.log("Failed to connect to MQTT Broker");
-      }
-    });
+        const levelEl = document.getElementById('level');
+        const statusEl = document.getElementById('status');
 
-    function sendCommand(cmd) {
-      const msg = new Paho.MQTT.Message(cmd);
-      msg.destinationName = "esp32/waterpump";
-      client.send(msg);
-      console.log("Sent:", cmd);
-    }
-  </script>
+        client.on('connect', () => {
+            statusEl.textContent = 'Connected to MQTT broker';
+            client.subscribe(topic, (err) => {
+                if (err) {
+                    statusEl.textContent = 'Subscription error: ' + err;
+                } else {
+                    statusEl.textContent = 'Subscribed to ' + topic;
+                }
+            });
+        });
+
+        client.on('message', (topic, message) => {
+            // message เป็น Buffer มาแปลงเป็น String
+            const waterLevel = message.toString();
+            levelEl.textContent = waterLevel + ' %';
+        });
+
+        client.on('error', (err) => {
+            statusEl.textContent = 'MQTT Error: ' + err;
+        });
+
+        client.on('close', () => {
+            statusEl.textContent = 'Disconnected from MQTT broker';
+            levelEl.textContent = '-- %';
+        });
+    </script>
 </body>
 </html>
