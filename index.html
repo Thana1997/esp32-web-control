@@ -19,6 +19,19 @@
             font-size: 18px;
             color: #555;
         }
+        button {
+            font-size: 18px;
+            margin: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #0077cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #005fa3;
+        }
     </style>
 </head>
 <body>
@@ -26,11 +39,15 @@
     <div id="level">-- %</div>
     <div id="status">Connecting to MQTT...</div>
 
+    <button onclick="sendCommand('PUMP_ON')">Pump ON</button>
+    <button onclick="sendCommand('PUMP_OFF')">Pump OFF</button>
+
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script>
-        // เชื่อมต่อ HiveMQ public broker ผ่าน WebSocket
+        // เชื่อมต่อ HiveMQ public broker ผ่าน WebSocket (port 8000)
         const brokerUrl = 'ws://broker.hivemq.com:8000/mqtt';
-        const topic = 'water_tank/level';
+        const topicLevel = 'water_tank/level';
+        const topicCommands = 'water_tank/commands';
 
         const client = mqtt.connect(brokerUrl);
 
@@ -39,19 +56,20 @@
 
         client.on('connect', () => {
             statusEl.textContent = 'Connected to MQTT broker';
-            client.subscribe(topic, (err) => {
+            client.subscribe(topicLevel, (err) => {
                 if (err) {
                     statusEl.textContent = 'Subscription error: ' + err;
                 } else {
-                    statusEl.textContent = 'Subscribed to ' + topic;
+                    statusEl.textContent = 'Subscribed to ' + topicLevel;
                 }
             });
         });
 
         client.on('message', (topic, message) => {
-            // message เป็น Buffer มาแปลงเป็น String
-            const waterLevel = message.toString();
-            levelEl.textContent = waterLevel + ' %';
+            if(topic === topicLevel) {
+                const waterLevel = message.toString();
+                levelEl.textContent = waterLevel + ' %';
+            }
         });
 
         client.on('error', (err) => {
@@ -62,6 +80,16 @@
             statusEl.textContent = 'Disconnected from MQTT broker';
             levelEl.textContent = '-- %';
         });
+
+        function sendCommand(cmd) {
+            if(client.connected) {
+                const message = cmd;
+                client.publish(topicCommands, message);
+                statusEl.textContent = 'Sent command: ' + cmd;
+            } else {
+                statusEl.textContent = 'Cannot send, not connected';
+            }
+        }
     </script>
 </body>
 </html>
