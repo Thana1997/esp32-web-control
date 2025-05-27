@@ -44,8 +44,8 @@
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script>
-        // เชื่อมต่อ HiveMQ public broker ผ่าน WebSocket (port 8000)
-        const brokerUrl = 'wss://broker.hivemq.com:8000/mqtt';
+        // เปลี่ยนเป็น Mosquitto WebSocket broker
+        const brokerUrl = 'ws://test.mosquitto.org:8080/mqtt';
         const topicLevel = 'water_tank/level';
         const topicCommands = 'water_tank/commands';
 
@@ -55,7 +55,7 @@
         const statusEl = document.getElementById('status');
 
         client.on('connect', () => {
-            statusEl.textContent = 'Connected to MQTT broker';
+            statusEl.textContent = 'Connected to MQTT broker (Mosquitto)';
             client.subscribe(topicLevel, (err) => {
                 if (err) {
                     statusEl.textContent = 'Subscription error: ' + err;
@@ -83,8 +83,7 @@
 
         function sendCommand(cmd) {
             if(client.connected) {
-                const message = cmd;
-                client.publish(topicCommands, message);
+                client.publish(topicCommands, cmd);
                 statusEl.textContent = 'Sent command: ' + cmd;
             } else {
                 statusEl.textContent = 'Cannot send, not connected';
