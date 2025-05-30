@@ -49,7 +49,7 @@
         const brokerUrl = 'wss://test.mosquitto.org:8081/mqtt';
         const topicLevel = 'water_tank_1997_bang/level';
         const topicCommands = 'water_tank_1997_bang/commands';
-        const topicStatus = 'water_tank_1997_bang/status';
+        const topicStatus = 'water_tank_1997_bang/status_pump'; // แก้ตรงนี้
 
         const client = mqtt.connect(brokerUrl);
 
@@ -72,9 +72,9 @@
             const msg = message.toString();
             if (topic === topicLevel) {
                 levelEl.textContent = msg + ' %';
-            } else if (topic === topicStatus && msg.startsWith("PUMP_STATUS:")) {
-                const pumpState = msg.split(":")[1];
-                pumpStatusEl.textContent = 'Pump Status: ' + pumpState;
+            } else if (topic === topicStatus) {
+                // msg จะเป็น 'ON' หรือ 'OFF' ตรงๆ
+                pumpStatusEl.textContent = 'Pump Status: ' + msg;
             }
         });
 
