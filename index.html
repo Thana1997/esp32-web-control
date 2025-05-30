@@ -15,9 +15,10 @@
             color: #0077cc;
             margin: 20px 0;
         }
-        #status {
+        #status, #pumpStatus {
             font-size: 18px;
             color: #555;
+            margin: 10px 0;
         }
         button {
             font-size: 18px;
@@ -37,6 +38,7 @@
 <body>
     <h1>Water Tank Level Monitor</h1>
     <div id="level">-- %</div>
+    <div id="pumpStatus">Pump Status: --</div>
     <div id="status">Connecting to MQTT...</div>
 
     <button onclick="sendCommand('PUMP_ON')">Pump ON</button>
@@ -44,31 +46,35 @@
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script>
-        // ✅ ใช้ WebSocket แบบเข้ารหัส (WSS)
         const brokerUrl = 'wss://test.mosquitto.org:8081/mqtt';
         const topicLevel = 'water_tank_1997_bang/level';
         const topicCommands = 'water_tank_1997_bang/commands';
+        const topicStatus = 'water_tank_1997_bang/status';
 
         const client = mqtt.connect(brokerUrl);
 
         const levelEl = document.getElementById('level');
         const statusEl = document.getElementById('status');
+        const pumpStatusEl = document.getElementById('pumpStatus');
 
         client.on('connect', () => {
             statusEl.textContent = 'Connected to MQTT broker (Mosquitto)';
-            client.subscribe(topicLevel, (err) => {
+            client.subscribe([topicLevel, topicStatus], (err) => {
                 if (err) {
                     statusEl.textContent = 'Subscription error: ' + err;
                 } else {
-                    statusEl.textContent = 'Subscribed to ' + topicLevel;
+                    statusEl.textContent = 'Subscribed to topics';
                 }
             });
         });
 
         client.on('message', (topic, message) => {
+            const msg = message.toString();
             if (topic === topicLevel) {
-                const waterLevel = message.toString();
-                levelEl.textContent = waterLevel + ' %';
+                levelEl.textContent = msg + ' %';
+            } else if (topic === topicStatus && msg.startsWith("PUMP_STATUS:")) {
+                const pumpState = msg.split(":")[1];
+                pumpStatusEl.textContent = 'Pump Status: ' + pumpState;
             }
         });
 
@@ -79,6 +85,7 @@
         client.on('close', () => {
             statusEl.textContent = 'Disconnected from MQTT broker';
             levelEl.textContent = '-- %';
+            pumpStatusEl.textContent = 'Pump Status: --';
         });
 
         function sendCommand(cmd) {
