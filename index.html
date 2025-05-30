@@ -45,9 +45,10 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script>
         // เปลี่ยนเป็น Mosquitto WebSocket broker
-        const brokerUrl = 'wss://test.mosquitto.org:8080/mqtt';
+        const brokerUrl = 'ws://test.mosquitto.org:8080/mqtt';
         const topicLevel = 'water_tank_1997_bang/level';
         const topicCommands = 'water_tank_1997_bang/commands';
+
 
         const client = mqtt.connect(brokerUrl);
 
