@@ -44,11 +44,10 @@
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script>
-        // เปลี่ยนเป็น Mosquitto WebSocket broker
-        const brokerUrl = 'ws://test.mosquitto.org:8080/mqtt';
+        // ✅ ใช้ WebSocket แบบเข้ารหัส (WSS)
+        const brokerUrl = 'wss://test.mosquitto.org:8081/mqtt';
         const topicLevel = 'water_tank_1997_bang/level';
         const topicCommands = 'water_tank_1997_bang/commands';
-
 
         const client = mqtt.connect(brokerUrl);
 
@@ -67,7 +66,7 @@
         });
 
         client.on('message', (topic, message) => {
-            if(topic === topicLevel) {
+            if (topic === topicLevel) {
                 const waterLevel = message.toString();
                 levelEl.textContent = waterLevel + ' %';
             }
@@ -83,7 +82,7 @@
         });
 
         function sendCommand(cmd) {
-            if(client.connected) {
+            if (client.connected) {
                 client.publish(topicCommands, cmd);
                 statusEl.textContent = 'Sent command: ' + cmd;
             } else {
