@@ -1,101 +1,94 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Water Tank Level Monitor</title>
-    <style>
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            margin: 50px;
-            background: #eef6f9;
-        }
-        #level {
-            font-size: 72px;
-            color: #0077cc;
-            margin: 20px 0;
-        }
-        #status, #pumpStatus {
-            font-size: 18px;
-            color: #555;
-            margin: 10px 0;
-        }
-        button {
-            font-size: 18px;
-            margin: 10px;
-            padding: 10px 20px;
-            cursor: pointer;
-            background: #0077cc;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        button:hover {
-            background: #005fa3;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Water Tank Monitor</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f3;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      color: #333;
+    }
+    .status {
+      margin-top: 2rem;
+      font-size: 1.5rem;
+    }
+    .pump-btn {
+      margin-top: 2rem;
+    }
+    button {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      margin: 1rem;
+      cursor: pointer;
+    }
+    #level-bar {
+      width: 100%;
+      max-width: 300px;
+      height: 30px;
+      background-color: #ddd;
+      border-radius: 5px;
+      margin: 1rem auto;
+      position: relative;
+    }
+    #level-fill {
+      height: 100%;
+      background-color: #4caf50;
+      border-radius: 5px;
+      width: 0%;
+      transition: width 0.5s;
+    }
+  </style>
 </head>
 <body>
-    <h1>Water Tank Level Monitor</h1>
-    <div id="level">-- %</div>
-    <div id="pumpStatus">Pump Status: --</div>
-    <div id="status">Connecting to MQTT...</div>
 
-    <button onclick="sendCommand('PUMP_ON')">Pump ON</button>
-    <button onclick="sendCommand('PUMP_OFF')">Pump OFF</button>
+  <h1>🌊 Water Tank Monitor</h1>
+  <div class="status">
+    <p>Water Level: <span id="water-level">--</span>%</p>
+    <div id="level-bar"><div id="level-fill"></div></div>
+    <p>Pump Status: <span id="pump-status">--</span></p>
+  </div>
 
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    <script>
-        const brokerUrl = 'wss://test.mosquitto.org:8081/mqtt';
-        const topicLevel = 'water_tank_1997_bang/level';
-        const topicCommands = 'water_tank_1997_bang/commands';
-        const topicStatus = 'water_tank_1997_bang/status_pump'; // แก้ตรงนี้
+  <div class="pump-btn">
+    <button onclick="sendCommand('ON')">Turn Pump ON</button>
+    <button onclick="sendCommand('OFF')">Turn Pump OFF</button>
+  </div>
 
-        const client = mqtt.connect(brokerUrl);
+  <script>
+    const MQTT_BROKER = "wss://test.mosquitto.org:8081";
+    const TOPIC_LEVEL = "water_tank_1997_bang/level";
+    const TOPIC_STATUS = "water_tank_1997_bang/status";
+    const TOPIC_COMMAND = "water_tank_1997_bang/commands";
 
-        const levelEl = document.getElementById('level');
-        const statusEl = document.getElementById('status');
-        const pumpStatusEl = document.getElementById('pumpStatus');
+    const client = mqtt.connect(MQTT_BROKER);
 
-        client.on('connect', () => {
-            statusEl.textContent = 'Connected to MQTT broker (Mosquitto)';
-            client.subscribe([topicLevel, topicStatus], (err) => {
-                if (err) {
-                    statusEl.textContent = 'Subscription error: ' + err;
-                } else {
-                    statusEl.textContent = 'Subscribed to topics';
-                }
-            });
-        });
+    client.on("connect", () => {
+      console.log("✅ Connected to MQTT Broker");
+      client.subscribe([TOPIC_LEVEL, TOPIC_STATUS]);
+    });
 
-        client.on('message', (topic, message) => {
-            const msg = message.toString();
-            if (topic === topicLevel) {
-                levelEl.textContent = msg + ' %';
-            } else if (topic === topicStatus) {
-                // msg จะเป็น 'ON' หรือ 'OFF' ตรงๆ
-                pumpStatusEl.textContent = 'Pump Status: ' + msg;
-            }
-        });
+    client.on("message", (topic, message) => {
+      if (topic === TOPIC_LEVEL) {
+        const level = parseInt(message.toString());
+        document.getElementById("water-level").textContent = level;
+        document.getElementById("level-fill").style.width = level + "%";
+      } else if (topic === TOPIC_STATUS) {
+        const status = message.toString();
+        document.getElementById("pump-status").textContent = status;
+      }
+    });
 
-        client.on('error', (err) => {
-            statusEl.textContent = 'MQTT Error: ' + err;
-        });
+    function sendCommand(cmd) {
+      client.publish(TOPIC_COMMAND, cmd);
+      alert(`📤 Sent command: ${cmd}`);
+    }
+  </script>
 
-        client.on('close', () => {
-            statusEl.textContent = 'Disconnected from MQTT broker';
-            levelEl.textContent = '-- %';
-            pumpStatusEl.textContent = 'Pump Status: --';
-        });
-
-        function sendCommand(cmd) {
-            if (client.connected) {
-                client.publish(topicCommands, cmd);
-                statusEl.textContent = 'Sent command: ' + cmd;
-            } else {
-                statusEl.textContent = 'Cannot send, not connected';
-            }
-        }
-    </script>
 </body>
 </html>
